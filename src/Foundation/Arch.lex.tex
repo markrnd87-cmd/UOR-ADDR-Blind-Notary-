@@ -1,0 +1,168 @@
+\documentclass[12pt]{lexlean}
+\usepackage{prism.arch}
+
+\title{UorNotary.Foundation.Arch --- ISO/IEC/IEEE 42010 Architecture Description}
+\author{UOR Foundation Commons Engineering}
+\lexmodule{UorNotary.Foundation.Arch}
+\lexlanguage{1.2}
+
+\begin{document}
+\maketitle
+
+\section{ISO/IEC/IEEE 42010 Stakeholders, Concerns (\texttt{C1}--\texttt{C8}) \& Viewpoints}
+
+\begin{lean}
+import UorNotary.Product
+import UorNotary.OwnerValues
+
+namespace UorNotary.Foundation.Arch
+
+inductive Stakeholder where
+  | AgentOperator
+  | McpToolVendor
+  | ExternalAuditor
+  | CommunityNotaryHost
+  | FoundationMaintainer
+deriving DecidableEq, Repr
+
+inductive Concern where
+  | C1_CryptographicBlindness
+  | C2_UnicodeSmugglingPrevention
+  | C3_OfflineReplayability
+  | C4_FailClosedDriftDetection
+  | C5_BilateralNonRepudiation
+  | C6_ReproducibleProjection
+  | C7_BoundedResourceConsumption
+  | C8_NonExtractiveCommonsExit
+deriving DecidableEq, Repr
+
+inductive ViewpointId where
+  | SecurityAndBlindnessViewpoint
+  | AdmissionAndSurfaceViewpoint
+  | VerificationAndReplayViewpoint
+  | CommonsGovernanceViewpoint
+deriving DecidableEq, Repr
+
+inductive ModelKind where
+  | ClosedEffectAlgebraModel
+  | Stage0UnicodeAutomatonModel
+  | DeterministicJcsProjectionModel
+  | IntotoDsseMerkleReceiptModel
+  | Iso42010GovernanceModel
+deriving DecidableEq, Repr
+
+def allViewpoints : List ViewpointId :=
+  [ .SecurityAndBlindnessViewpoint
+  , .AdmissionAndSurfaceViewpoint
+  , .VerificationAndReplayViewpoint
+  , .CommonsGovernanceViewpoint
+  ]
+
+def stakeholderConcerns (s : Stakeholder) : List Concern :=
+  match s with
+  | .AgentOperator =>
+      [ .C1_CryptographicBlindness
+      , .C2_UnicodeSmugglingPrevention
+      , .C4_FailClosedDriftDetection
+      , .C7_BoundedResourceConsumption
+      , .C8_NonExtractiveCommonsExit
+      ]
+  | .McpToolVendor =>
+      [ .C2_UnicodeSmugglingPrevention
+      , .C5_BilateralNonRepudiation
+      , .C6_ReproducibleProjection
+      ]
+  | .ExternalAuditor =>
+      [ .C1_CryptographicBlindness
+      , .C3_OfflineReplayability
+      , .C5_BilateralNonRepudiation
+      , .C6_ReproducibleProjection
+      ]
+  | .CommunityNotaryHost =>
+      [ .C1_CryptographicBlindness
+      , .C7_BoundedResourceConsumption
+      , .C8_NonExtractiveCommonsExit
+      ]
+  | .FoundationMaintainer =>
+      [ .C3_OfflineReplayability
+      , .C6_ReproducibleProjection
+      , .C8_NonExtractiveCommonsExit
+      ]
+
+def securityViewpointConcerns : List Concern :=
+  [ .C1_CryptographicBlindness
+  , .C4_FailClosedDriftDetection
+  , .C7_BoundedResourceConsumption
+  ]
+
+def admissionViewpointConcerns : List Concern :=
+  [ .C2_UnicodeSmugglingPrevention
+  , .C4_FailClosedDriftDetection
+  , .C6_ReproducibleProjection
+  , .C7_BoundedResourceConsumption
+  ]
+
+def verificationViewpointConcerns : List Concern :=
+  [ .C3_OfflineReplayability
+  , .C5_BilateralNonRepudiation
+  , .C6_ReproducibleProjection
+  ]
+
+def commonsViewpointConcerns : List Concern :=
+  [ .C8_NonExtractiveCommonsExit
+  , .C3_OfflineReplayability
+  ]
+
+def viewpointConcerns (v : ViewpointId) : List Concern :=
+  match v with
+  | .SecurityAndBlindnessViewpoint  => securityViewpointConcerns
+  | .AdmissionAndSurfaceViewpoint   => admissionViewpointConcerns
+  | .VerificationAndReplayViewpoint => verificationViewpointConcerns
+  | .CommonsGovernanceViewpoint     => commonsViewpointConcerns
+
+def viewpointModelKinds (v : ViewpointId) : List ModelKind :=
+  match v with
+  | .SecurityAndBlindnessViewpoint  => [ .ClosedEffectAlgebraModel ]
+  | .AdmissionAndSurfaceViewpoint   => [ .Stage0UnicodeAutomatonModel, .DeterministicJcsProjectionModel ]
+  | .VerificationAndReplayViewpoint => [ .IntotoDsseMerkleReceiptModel, .DeterministicJcsProjectionModel ]
+  | .CommonsGovernanceViewpoint     => [ .Iso42010GovernanceModel ]
+
+def concernRealizingModule (c : Concern) : String :=
+  match c with
+  | .C1_CryptographicBlindness     => "UorNotary.Effects"
+  | .C2_UnicodeSmugglingPrevention => "UorNotary.Admission"
+  | .C3_OfflineReplayability       => "UorNotary.NotaryCore"
+  | .C4_FailClosedDriftDetection   => "UorNotary.NotaryCore"
+  | .C5_BilateralNonRepudiation    => "UorNotary.NotaryCore"
+  | .C6_ReproducibleProjection     => "UorNotary.Surface"
+  | .C7_BoundedResourceConsumption => "UorNotary.OwnerValues"
+  | .C8_NonExtractiveCommonsExit   => "UorNotary.Product"
+
+def isConcernFramed (c : Concern) : Bool :=
+  allViewpoints.any (fun v => (viewpointConcerns v).contains c)
+
+theorem everyStakeholderHasConcern (s : Stakeholder) :
+    (stakeholderConcerns s).isEmpty = false := by
+  cases s <;> rfl
+
+theorem everyConcernIsFramedByViewpoint (c : Concern) :
+    isConcernFramed c = true := by
+  cases c <;> rfl
+
+theorem c1FramedBySecurityViewpoint :
+    (viewpointConcerns ViewpointId.SecurityAndBlindnessViewpoint).contains
+      Concern.C1_CryptographicBlindness = true := by
+  rfl
+
+theorem everyViewpointHasGoverningModelKind (v : ViewpointId) :
+    (viewpointModelKinds v).isEmpty = false := by
+  cases v <;> rfl
+
+theorem architectureClosureComplete (c : Concern) :
+    (concernRealizingModule c).isEmpty = false := by
+  cases c <;> rfl
+
+end UorNotary.Foundation.Arch
+\end{lean}
+
+\end{document}

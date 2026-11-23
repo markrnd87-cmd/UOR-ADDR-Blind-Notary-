@@ -1,0 +1,6 @@
+{
+  "name": "UOR MCP Blind Notary",
+  "description": "Zero-trust blind cryptographic notary, Stage-0 Unicode 17.0.0 refusal gate, offline receipt verifier, and public Watchtower for Model Context Protocol (MCP) tool surfaces.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

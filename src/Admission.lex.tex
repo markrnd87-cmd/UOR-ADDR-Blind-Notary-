@@ -1,0 +1,298 @@
+\documentclass[12pt]{lexlean}
+\usepackage{prism.arch}
+
+\title{UorNotary.Admission --- Pure Stage-0 Unicode 17.0.0 \& NFC Refusal Gate}
+\author{UOR Foundation Commons Engineering}
+\lexmodule{UorNotary.Admission}
+\lexlanguage{1.2}
+
+\begin{document}
+\maketitle
+
+\section{Stage-0 Unicode 17.0.0 \& UAX \#15 NFC Refusal Gate (\texttt{UR-01} .. \texttt{UR-12})}
+
+\begin{lean}
+import UorNotary.Product
+import UorNotary.OwnerValues
+
+namespace UorNotary.Admission
+
+open UorNotary.OwnerValues
+
+inductive UnicodeProfile where
+  | StrictV1
+  | RgiAwareV1
+deriving DecidableEq, Repr
+
+inductive UnicodeRefusal where
+  | NotUtf8
+  | NotNfc
+  | TagBlockSmuggling
+  | BidiOverride
+  | InvisibleFormatter
+  | VariationSelectorStego
+  | ForbiddenControl
+  | LimitExceeded
+deriving DecidableEq, Repr
+
+inductive AdmissionVerdict where
+  | Admitted
+  | Refused (reason : UnicodeRefusal)
+deriving DecidableEq, Repr
+
+def refusalRank (r : UnicodeRefusal) : Nat :=
+  match r with
+  | .NotUtf8                => 0
+  | .LimitExceeded          => 1
+  | .NotNfc                 => 2
+  | .TagBlockSmuggling      => 3
+  | .BidiOverride           => 4
+  | .InvisibleFormatter     => 5
+  | .VariationSelectorStego => 6
+  | .ForbiddenControl       => 7
+
+def mergeRefusal (r1 r2 : UnicodeRefusal) : UnicodeRefusal :=
+  if refusalRank r1 ≤ refusalRank r2 then r1 else r2
+
+def combineVerdict (v1 v2 : AdmissionVerdict) : AdmissionVerdict :=
+  match v1, v2 with
+  | .Admitted, v2 => v2
+  | v1, .Admitted => v1
+  | .Refused r1, .Refused r2 => .Refused (mergeRefusal r1 r2)
+
+def isTagBlockScalar (c : UInt32) : Bool :=
+  (0xE0000 : UInt32) ≤ c && c ≤ (0xE007F : UInt32)
+
+def isBidiScalar (c : UInt32) : Bool :=
+  ((0x202A : UInt32) ≤ c && c ≤ (0x202E : UInt32)) ||
+  ((0x2066 : UInt32) ≤ c && c ≤ (0x2069 : UInt32)) ||
+  (c == (0x061C : UInt32)) ||
+  (c == (0x200E : UInt32)) ||
+  (c == (0x200F : UInt32))
+
+def isInvisibleFormatterScalar (c : UInt32) : Bool :=
+  ((0x200B : UInt32) ≤ c && c ≤ (0x200D : UInt32)) ||
+  (c == (0xFEFF : UInt32)) ||
+  (c == (0x00AD : UInt32)) ||
+  ((0x2060 : UInt32) ≤ c && c ≤ (0x2064 : UInt32))
+
+def isVariationSelectorScalar (c : UInt32) : Bool :=
+  ((0xFE00 : UInt32) ≤ c && c ≤ (0xFE0F : UInt32)) ||
+  ((0xE0100 : UInt32) ≤ c && c ≤ (0xE01EF : UInt32))
+
+def isForbiddenControlOrNonChar (c : UInt32) : Bool :=
+  (c ≤ (0x001F : UInt32) && c != (0x0009 : UInt32) && c != (0x000A : UInt32) && c != (0x000D : UInt32)) ||
+  ((0x007F : UInt32) ≤ c && c ≤ (0x009F : UInt32)) ||
+  ((0xFDD0 : UInt32) ≤ c && c ≤ (0xFDEF : UInt32)) ||
+  ((c &&& (0xFFFF : UInt32)) == (0xFFFE : UInt32)) ||
+  ((c &&& (0xFFFF : UInt32)) == (0xFFFF : UInt32)) ||
+  (c > (0x10FFFF : UInt32))
+
+def classifyScalarStrict (c : UInt32) : AdmissionVerdict :=
+  if isTagBlockScalar c then
+    .Refused .TagBlockSmuggling
+  else if isBidiScalar c then
+    .Refused .BidiOverride
+  else if isInvisibleFormatterScalar c then
+    .Refused .InvisibleFormatter
+  else if isVariationSelectorScalar c then
+    .Refused .VariationSelectorStego
+  else if isForbiddenControlOrNonChar c then
+    .Refused .ForbiddenControl
+  else
+    .Admitted
+
+def isRgiSubdivisionTagChar (c : UInt32) : Bool :=
+  ((0xE0061 : UInt32) ≤ c && c ≤ (0xE007A : UInt32)) ||
+  ((0xE0030 : UInt32) ≤ c && c ≤ (0xE0039 : UInt32))
+
+def isEmojiBaseScalar (c : UInt32) : Bool :=
+  ((0x1F300 : UInt32) ≤ c && c ≤ (0x1FAFF : UInt32)) ||
+  ((0x2600 : UInt32) ≤ c && c ≤ (0x27BF : UInt32))
+
+def isRtlOrIndicLetter (c : UInt32) : Bool :=
+  ((0x0590 : UInt32) ≤ c && c ≤ (0x06FF : UInt32)) ||
+  ((0x0900 : UInt32) ≤ c && c ≤ (0x0D7F : UInt32))
+
+def admitScalar (profile : UnicodeProfile) (c : UInt32) : AdmissionVerdict :=
+  match profile with
+  | .StrictV1   => classifyScalarStrict c
+  | .RgiAwareV1 => classifyScalarStrict c
+
+def scanScalarsStrict (scalars : List UInt32) : AdmissionVerdict :=
+  scalars.foldl (fun acc c => combineVerdict acc (classifyScalarStrict c)) .Admitted
+
+def scanScalarsRgiAware : List UInt32 → AdmissionVerdict
+  | [] => .Admitted
+  | (0x1F3F4 : UInt32) :: t1 :: t2 :: t3 :: t4 :: t5 :: (0xE007F : UInt32) :: rest =>
+      if isRgiSubdivisionTagChar t1 && isRgiSubdivisionTagChar t2 &&
+         isRgiSubdivisionTagChar t3 && isRgiSubdivisionTagChar t4 &&
+         isRgiSubdivisionTagChar t5 then
+        scanScalarsRgiAware rest
+      else
+        combineVerdict (.Refused .TagBlockSmuggling) (scanScalarsRgiAware rest)
+  | b1 :: (0x200D : UInt32) :: b2 :: rest =>
+      if isEmojiBaseScalar b1 && isEmojiBaseScalar b2 then
+        scanScalarsRgiAware (b2 :: rest)
+      else
+        combineVerdict (.Refused .InvisibleFormatter) (scanScalarsRgiAware (b2 :: rest))
+  | l1 :: (0x200C : UInt32) :: l2 :: rest =>
+      if isRtlOrIndicLetter l1 && isRtlOrIndicLetter l2 then
+        scanScalarsRgiAware (l2 :: rest)
+      else
+        combineVerdict (.Refused .InvisibleFormatter) (scanScalarsRgiAware (l2 :: rest))
+  | b :: (0xFE0F : UInt32) :: rest =>
+      if isEmojiBaseScalar b then
+        scanScalarsRgiAware rest
+      else
+        combineVerdict (.Refused .VariationSelectorStego) (scanScalarsRgiAware rest)
+  | b :: (0xFE0E : UInt32) :: rest =>
+      if isEmojiBaseScalar b then
+        scanScalarsRgiAware rest
+      else
+        combineVerdict (.Refused .VariationSelectorStego) (scanScalarsRgiAware rest)
+  | c :: rest =>
+      combineVerdict (classifyScalarStrict c) (scanScalarsRgiAware rest)
+
+def scanScalars (profile : UnicodeProfile) (scalars : List UInt32) : AdmissionVerdict :=
+  match profile with
+  | .StrictV1   => scanScalarsStrict scalars
+  | .RgiAwareV1 => scanScalarsRgiAware scalars
+
+structure StringLeaf where
+  fieldPath    : String
+  utf8Valid    : Bool
+  byteLength   : Nat
+  nfcCanonical : Bool
+  scalars      : List UInt32
+deriving DecidableEq, Repr
+
+structure RawSurfaceInput where
+  toolCount   : Nat
+  jsonDepth   : Nat
+  leaves      : List StringLeaf
+deriving DecidableEq, Repr
+
+def admitLeaf (profile : UnicodeProfile) (maxBytes : Nat) (leaf : StringLeaf) : AdmissionVerdict :=
+  if !leaf.utf8Valid then
+    .Refused .NotUtf8
+  else if leaf.byteLength > maxBytes then
+    .Refused .LimitExceeded
+  else if !leaf.nfcCanonical then
+    .Refused .NotNfc
+  else
+    scanScalars profile leaf.scalars
+
+def admitSurfaceWithPolicy (policy : OwnerPolicy) (profile : UnicodeProfile) (surface : RawSurfaceInput) : AdmissionVerdict :=
+  let structuralVerdict : AdmissionVerdict :=
+    if surface.toolCount > policy.toolsLimit || surface.jsonDepth > policy.jsonDepthLimit then
+      .Refused .LimitExceeded
+    else
+      .Admitted
+  surface.leaves.foldl
+    (fun acc leaf => combineVerdict acc (admitLeaf profile policy.descriptionBytesLimit leaf))
+    structuralVerdict
+
+def admitSurface (profile : UnicodeProfile) (surface : RawSurfaceInput) : AdmissionVerdict :=
+  admitSurfaceWithPolicy defaultOwnerPolicy profile surface
+
+def canonicalizeAndMint {α : Type} (profile : UnicodeProfile) (surface : RawSurfaceInput)
+    (mintFn : RawSurfaceInput → α) : Option α :=
+  match admitSurface profile surface with
+  | .Admitted  => some (mintFn surface)
+  | .Refused _ => none
+
+theorem refusalPrecedesCanonicalization {α : Type} (profile : UnicodeProfile)
+    (raw : RawSurfaceInput) (mintFn : RawSurfaceInput → α) (r : UnicodeRefusal)
+    (hRefused : admitSurface profile raw = AdmissionVerdict.Refused r) :
+    canonicalizeAndMint profile raw mintFn = none := by
+  unfold canonicalizeAndMint
+  rw [hRefused]
+
+theorem invalidUtf8RefusedFirst (profile : UnicodeProfile) (maxBytes : Nat) (leaf : StringLeaf)
+    (hInvalid : leaf.utf8Valid = false) :
+    admitLeaf profile maxBytes leaf = AdmissionVerdict.Refused UnicodeRefusal.NotUtf8 := by
+  unfold admitLeaf
+  rw [hInvalid]
+  rfl
+
+theorem nonNfcRefusedBeforeHashing (profile : UnicodeProfile) (maxBytes : Nat) (leaf : StringLeaf)
+    (hUtf8 : leaf.utf8Valid = true)
+    (hSize : (leaf.byteLength > maxBytes) = false)
+    (hNfc  : leaf.nfcCanonical = false) :
+    admitLeaf profile maxBytes leaf = AdmissionVerdict.Refused UnicodeRefusal.NotNfc := by
+  unfold admitLeaf
+  rw [hUtf8, hSize, hNfc]
+  rfl
+
+theorem strictRefusesAllTagBlock (c : UInt32)
+    (hRange : isTagBlockScalar c = true) :
+    admitScalar UnicodeProfile.StrictV1 c = AdmissionVerdict.Refused UnicodeRefusal.TagBlockSmuggling := by
+  unfold admitScalar classifyScalarStrict
+  rw [hRange]
+  rfl
+
+theorem strictRefusesBidiUnconditionally (c : UInt32)
+    (hNotTag : isTagBlockScalar c = false)
+    (hBidi   : isBidiScalar c = true) :
+    admitScalar UnicodeProfile.StrictV1 c = AdmissionVerdict.Refused UnicodeRefusal.BidiOverride := by
+  unfold admitScalar classifyScalarStrict
+  rw [hNotTag, hBidi]
+  rfl
+
+theorem strictRefusesInvisibleFormatters :
+    admitScalar UnicodeProfile.StrictV1 (0x200B : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.InvisibleFormatter ∧
+    admitScalar UnicodeProfile.StrictV1 (0x200D : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.InvisibleFormatter ∧
+    admitScalar UnicodeProfile.StrictV1 (0xFEFF : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.InvisibleFormatter := by
+  decide
+
+theorem strictRefusesVariationSelectors :
+    admitScalar UnicodeProfile.StrictV1 (0xFE0F : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.VariationSelectorStego ∧
+    admitScalar UnicodeProfile.StrictV1 (0xE0100 : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.VariationSelectorStego := by
+  decide
+
+theorem refusalOrderDeterministic (surface : RawSurfaceInput) (profile : UnicodeProfile) :
+    admitSurface profile surface = admitSurface profile surface ∧
+    refusalRank .NotUtf8 < refusalRank .LimitExceeded ∧
+    refusalRank .LimitExceeded < refusalRank .NotNfc ∧
+    refusalRank .NotNfc < refusalRank .TagBlockSmuggling ∧
+    refusalRank .TagBlockSmuggling < refusalRank .BidiOverride ∧
+    refusalRank .BidiOverride < refusalRank .InvisibleFormatter ∧
+    refusalRank .InvisibleFormatter < refusalRank .VariationSelectorStego ∧
+    refusalRank .VariationSelectorStego < refusalRank .ForbiddenControl := by
+  refine ⟨rfl, ?_⟩
+  decide
+
+theorem forbidsControlAndNonCharacters :
+    admitScalar UnicodeProfile.StrictV1 (0x0000 : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.ForbiddenControl ∧
+    admitScalar UnicodeProfile.StrictV1 (0x007F : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.ForbiddenControl ∧
+    admitScalar UnicodeProfile.StrictV1 (0xFDD0 : UInt32) = AdmissionVerdict.Refused UnicodeRefusal.ForbiddenControl ∧
+    admitScalar UnicodeProfile.StrictV1 (0x000A : UInt32) = AdmissionVerdict.Admitted := by
+  decide
+
+def scotlandFlagScalars : List UInt32 :=
+  [0x1F3F4, 0xE0067, 0xE0062, 0xE0073, 0xE0063, 0xE0074, 0xE007F]
+
+theorem rgiAwareAdmitsValidSubdivisionFlag :
+    scanScalars UnicodeProfile.StrictV1 scotlandFlagScalars = AdmissionVerdict.Refused UnicodeRefusal.TagBlockSmuggling ∧
+    scanScalars UnicodeProfile.RgiAwareV1 scotlandFlagScalars = AdmissionVerdict.Admitted := by
+  decide
+
+theorem allLeavesAndKeysScanned (profile : UnicodeProfile) (leaf : StringLeaf) (r : UnicodeRefusal)
+    (hLeaf : admitLeaf profile maxDescriptionBytes leaf = AdmissionVerdict.Refused r) :
+    admitSurface profile { toolCount := 1, jsonDepth := 1, leaves := [leaf] } =
+      AdmissionVerdict.Refused r := by
+  unfold admitSurface admitSurfaceWithPolicy defaultOwnerPolicy
+  simp [maxToolsPerManifest, maxJsonDepth, hLeaf, combineVerdict]
+
+theorem admitPureTotal (profile : UnicodeProfile) (surface : RawSurfaceInput) :
+    admitSurface profile surface = AdmissionVerdict.Admitted ∨
+    ∃ r : UnicodeRefusal, admitSurface profile surface = AdmissionVerdict.Refused r := by
+  cases h : admitSurface profile surface with
+  | Admitted  => exact Or.inl rfl
+  | Refused r => exact Or.inr ⟨r, rfl⟩
+
+end UorNotary.Admission
+\end{lean}
+
+\end{document}

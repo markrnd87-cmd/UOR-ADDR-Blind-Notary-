@@ -1,0 +1,19 @@
+{
+  "name": "@uor-foundation/verifier-offline",
+  "version": "0.1.0",
+  "description": "Zero-network 5-step offline DSSE v1.0 PAE, in-toto Statement v1, uor-addr kappa, C2SP Merkle inclusion, and Notary.holo verifier.",
+  "type": "module",
+  "license": "MIT OR Apache-2.0",
+  "bin": {
+    "uor-verify-offline": "./src/cli.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "scripts": {
+    "test": "node ./test/verify_golden.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

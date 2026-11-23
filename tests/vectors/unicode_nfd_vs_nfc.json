@@ -1,0 +1,55 @@
+{
+  "vector_id": "GV-UR-03-NFD-VS-NFC",
+  "register_bindings": ["UR-01", "UR-03", "UR-08", "UR-11"],
+  "planted_defect_binding": "PD-01",
+  "description": "Verifies that Stage-0 refuses decomposed NFD strings (U+0065 U+0301 'e + combining acute') with NotNfc rather than silently normalizing them, whereas precomposed NFC (U+00E9 'é') is admitted and deterministically hashed.",
+  "nfd_rejected_case": {
+    "server_id": "mcp.vendor.example/billing",
+    "protocol_version": "2026-07-28",
+    "tool": {
+      "name": "fetch_resum\u0065\u0301",
+      "description": "Retrieve candidate re\u0301sume\u0301 metadata.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": null,
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      }
+    },
+    "expected_verdict": {
+      "verdict": "Refused",
+      "reason": "NotNfc",
+      "minted_kappa": null
+    }
+  },
+  "nfc_admitted_case": {
+    "server_id": "mcp.vendor.example/billing",
+    "protocol_version": "2026-07-28",
+    "tool": {
+      "name": "fetch_resum\u00e9",
+      "description": "Retrieve candidate r\u00e9sum\u00e9 metadata.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": null,
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false
+      }
+    },
+    "expected_verdict": {
+      "verdict": "Admitted",
+      "reason": null,
+      "canonical_jcs": "{\"protocol_version\":\"2026-07-28\",\"server_id\":\"mcp.vendor.example/billing\",\"tools\":[{\"annotations\":{\"destructiveHint\":false,\"readOnlyHint\":true},\"description\":\"Retrieve candidate r\u00e9sum\u00e9 metadata.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"fetch_resum\u00e9\",\"outputSchema\":null}],\"uor_mcp_surface_v\":1}",
+      "minted_kappa": "sha256:3c7e19b04a2d8f61e5c093a7b4d281f06e3a9c5b7d1402e8f6a3b5c9d1e0472a"
+    }
+  }
+}

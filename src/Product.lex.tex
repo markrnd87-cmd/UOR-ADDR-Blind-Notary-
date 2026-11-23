@@ -1,0 +1,115 @@
+\documentclass[12pt]{lexlean}
+\usepackage{prism.arch}
+
+\title{UorNotary.Product --- Product Identity, Free Commons Scope \& Claim Boundaries}
+\author{UOR Foundation Commons Engineering}
+\lexmodule{UorNotary.Product}
+\lexlanguage{1.2}
+
+\begin{document}
+\maketitle
+
+\section{Product Identity \& Zero-Lock-In Free Commons Mandate}
+
+\begin{lean}
+namespace UorNotary.Product
+
+def crateName : String := "prism_mcp_notary"
+def packageName : String := "uor-mcp-notary"
+def modulePrefix : String := "UorNotary"
+def languageVersion : String := "1.2"
+def mcpProtocolVersion : String := "2026-07-28"
+def uorAddrVersion : String := "0.2.0"
+def spdxLicense : String := "MIT OR Apache-2.0"
+
+inductive GovernanceModel where
+  | OpenFoundationCommons
+deriving DecidableEq, Repr
+
+def activeGovernanceModel : GovernanceModel :=
+  GovernanceModel.OpenFoundationCommons
+
+inductive ClaimDomain where
+  | ImplementationAcceptance
+  | PayloadBlindness
+  | UnicodeSmugglingRefusal
+  | OfflineVerification
+  | ZeroLockInFreeCommons
+deriving DecidableEq, Repr
+
+structure ClaimBoundary where
+  domain          : ClaimDomain
+  formalGuarantee : String
+  explicitNonScope : String
+  registerBinding : String
+deriving DecidableEq, Repr
+
+def boundaryFor (d : ClaimDomain) : ClaimBoundary :=
+  match d with
+  | .ImplementationAcceptance =>
+    { domain := .ImplementationAcceptance
+    , formalGuarantee :=
+        "just vv passes cleanly (lexlean fmt --check, lexlean check, lexlean verify, prismpm check, prismpm build, golden vectors, planted defects)."
+    , explicitNonScope :=
+        "Does NOT prove host OS kernel integrity, hardware KMS physical security, or remote MCP server internal security."
+    , registerBinding := "AU-13"
+    }
+  | .PayloadBlindness =>
+    { domain := .PayloadBlindness
+    , formalGuarantee :=
+        "Neither HostEffect (E1-E7) nor Observability can carry raw MCP text, arguments, or outputs (noRawPayloadInHostEffects, redactedHasOneValue)."
+    , explicitNonScope :=
+        "Does NOT protect against a user deliberately modifying the thin host adapter to log raw inputs before calling core-wasm."
+    , registerBinding := "EF-05"
+    }
+  | .UnicodeSmugglingRefusal =>
+    { domain := .UnicodeSmugglingRefusal
+    , formalGuarantee :=
+        "admitSurface deterministically refuses all forbidden scalar classes before canonicalization under StrictV1."
+    , explicitNonScope :=
+        "Does NOT perform semantic LLM prompt-injection detection on ordinary visible ASCII/Unicode prose (Risk R8 Residual)."
+    , registerBinding := "UR-01"
+    }
+  | .OfflineVerification =>
+    { domain := .OfflineVerification
+    , formalGuarantee :=
+        "Any third party can verify DSSE PAE signatures, recompute kappa-labels via uor-addr, and check .holo / Merkle proofs with zero network calls (TC-05/TC-06)."
+    , explicitNonScope :=
+        "Does NOT require any central paid server; commercial operators only compete on uptime, HSMs, and enterprise alert routing."
+    , registerBinding := "WT-04"
+    }
+  | .ZeroLockInFreeCommons =>
+    { domain := .ZeroLockInFreeCommons
+    , formalGuarantee :=
+        "Every protocol rule, CLI sidecar, self-hostable notary, offline verifier, and public Watchtower runs free under MIT OR Apache-2.0."
+    , explicitNonScope :=
+        "Paid hosted compliance tiers are strictly out-of-scope of this repository."
+    , registerBinding := "WT-06"
+    }
+
+def isBoundaryWellFormed (b : ClaimBoundary) : Bool :=
+  (!b.formalGuarantee.isEmpty) &&
+  (!b.explicitNonScope.isEmpty) &&
+  (!b.registerBinding.isEmpty)
+
+theorem claimBoundaryComplete (d : ClaimDomain) :
+    isBoundaryWellFormed (boundaryFor d) = true := by
+  cases d <;> rfl
+
+theorem freeCommonsZeroLockIn :
+    activeGovernanceModel = GovernanceModel.OpenFoundationCommons ∧
+    spdxLicense = "MIT OR Apache-2.0" := by
+  exact ⟨rfl, rfl⟩
+
+theorem crateAndPrefixDiscipline :
+    crateName = "prism_mcp_notary" ∧ modulePrefix = "UorNotary" := by
+  exact ⟨rfl, rfl⟩
+
+theorem boundaryDomainPreserved (d : ClaimDomain) :
+    (boundaryFor d).domain = d := by
+  cases d <;> rfl
+
+end UorNotary.Product
+\end{lean}
+
+\end{document}

@@ -1,0 +1,54 @@
+[package]
+name = "repo-conformance"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Normative conformance and anti-vacuity planted-defect test suite for uor-mcp-notary (prism_mcp_notary)."
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "unicode_gate"
+path = "unicode_gate.rs"
+
+[[test]]
+name = "surface_projection"
+path = "surface_projection.rs"
+
+[[test]]
+name = "notary_core"
+path = "notary_core.rs"
+
+[[test]]
+name = "effects_blindness"
+path = "effects_blindness.rs"
+
+[[test]]
+name = "observability"
+path = "observability.rs"
+
+[[test]]
+name = "security"
+path = "security.rs"
+
+[[test]]
+name = "owner_values"
+path = "owner_values.rs"
+
+[[test]]
+name = "ecosystem"
+path = "ecosystem.rs"
+
+[[test]]
+name = "planted_defects"
+path = "planted_defects.rs"
+
+[dependencies]
+anyhow = "1.0"
+hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+sha2 = "0.10"
+toml = "0.8"

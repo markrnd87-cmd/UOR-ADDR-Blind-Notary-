@@ -1,0 +1,42 @@
+[package]
+name = "uor-mcp-notary"
+crate_name = "prism_mcp_notary"
+prefix = "UorNotary"
+language = "1.2"
+lean_version = "4.32.1"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+description = "Zero-trust blind cryptographic notary, Stage-0 Unicode 17.0.0 refusal gate, offline receipt verifier, and public Watchtower for Model Context Protocol (MCP) tool surfaces."
+repository = "https://github.com/UOR-Foundation/uor-mcp-notary"
+
+[language_policy]
+forbid_legacy_data_blocks = true   # Enforces LLP2003 / AU-13: refuses \semanticdata, \toolingdata, \coredata
+forbid_sorry = true                # Enforces zero sorry across all kernel modules
+forbid_custom_axioms = true        # Enforces standard Lean 4.32.1 kernel axiom policy
+
+[lexicons]
+prism_arch = { path = "language/prism.arch", standard = "ISO/IEC/IEEE 42010" }
+
+[modules]
+sources = [
+  "src/Product.lex.tex",
+  "src/OwnerValues.lex.tex",
+  "src/Foundation/Arch.lex.tex",
+  "src/Features.lex.tex",
+  "src/Admission.lex.tex",
+  "src/Surface.lex.tex",
+  "src/NotaryCore.lex.tex",
+  "src/Effects.lex.tex",
+  "src/Observability.lex.tex",
+  "src/Security.lex.tex",
+  "src/Provider.lex.tex"
+]
+
+[exports]
+roots = ["UorNotary.Provider.notaryRun", "UorNotary.Admission.admitSurface"]
+hologram = "Notary.holo"
+wasm_target = "core-wasm/prism_mcp_notary_core_wasm.wasm"
+
+[dependencies]
+UorMcp = { git = "https://github.com/UOR-Foundation/MCP", rev = "2026-07-28", locked = true }
+UorAddr = { git = "https://github.com/UOR-Foundation/uor-addr", tag = "v0.2.0", locked = true }

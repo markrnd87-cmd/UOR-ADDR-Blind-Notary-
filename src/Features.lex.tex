@@ -1,0 +1,172 @@
+\documentclass[12pt]{lexlean}
+\usepackage{prism.arch}
+
+\title{UorNotary.Features --- Free Commons User Journeys \& Kernel Theorem Bindings}
+\author{UOR Foundation Commons Engineering}
+\lexmodule{UorNotary.Features}
+\lexlanguage{1.2}
+
+\begin{document}
+\maketitle
+
+\section{User Journeys \& Feature Matrix Backed by Kernel Theorems}
+
+\begin{lean}
+import UorNotary.Product
+import UorNotary.OwnerValues
+import UorNotary.Foundation.Arch
+
+namespace UorNotary.Features
+
+open UorNotary.Foundation.Arch
+
+inductive FeatureId where
+  | F1_Stage0UnicodeRefusalGate
+  | F2_DeterministicSurfacePinning
+  | F3_BlindNotarizationAndCausalChaining
+  | F4_ZeroNetworkOfflineVerifier
+  | F5_LocalZeroTrustSidecarProxy
+  | F6_PublicMcpWatchtower
+deriving DecidableEq, Repr
+
+structure FeatureSpec where
+  id                : FeatureId
+  title             : String
+  stakeholders      : List Stakeholder
+  concerns          : List Concern
+  registerIds       : List String
+  backingTheorems   : List String
+  freeCommonsBinary : String
+deriving DecidableEq, Repr
+
+def stage0UnicodeFeature : FeatureSpec :=
+  { id              := .F1_Stage0UnicodeRefusalGate
+  , title           := "Pure Stage-0 Unicode 17.0.0 & NFC Refusal Gate (StrictV1 / RgiAwareV1)"
+  , stakeholders    := [.AgentOperator, .McpToolVendor]
+  , concerns        := [.C2_UnicodeSmugglingPrevention, .C7_BoundedResourceConsumption]
+  , registerIds     := ["UR-01", "UR-04", "UR-05", "UR-08", "UR-12"]
+  , backingTheorems :=
+      [ "UorNotary.Admission.refusalPrecedesCanonicalization"
+      , "UorNotary.Admission.strictRefusesAllTagBlock"
+      , "UorNotary.Admission.strictRefusesBidiUnconditionally"
+      , "UorNotary.Admission.refusalOrderDeterministic"
+      , "UorNotary.Admission.admitPureTotal"
+      ]
+  , freeCommonsBinary := "prism_mcp_notary_core_wasm.wasm"
+  }
+
+def surfacePinningFeature : FeatureSpec :=
+  { id              := .F2_DeterministicSurfacePinning
+  , title           := "Deterministic MCP tools/list Projection & Permutation-Invariant Kappa Minting"
+  , stakeholders    := [.AgentOperator, .McpToolVendor, .ExternalAuditor]
+  , concerns        := [.C4_FailClosedDriftDetection, .C6_ReproducibleProjection]
+  , registerIds     := ["NR-01", "NR-02", "NR-03", "NR-07", "WT-01"]
+  , backingTheorems :=
+      [ "UorNotary.Surface.projectionPermutationInvariant"
+      , "UorNotary.Surface.causalChainIntegrity"
+      , "UorNotary.Surface.kappaLabelExactLength"
+      ]
+  , freeCommonsBinary := "uor-notary pin"
+  }
+
+def blindNotarizationFeature : FeatureSpec :=
+  { id              := .F3_BlindNotarizationAndCausalChaining
+  , title           := "Type-Blind in-toto v1 / DSSE PAE Notarization & C2SP Merkle Log"
+  , stakeholders    := [.AgentOperator, .CommunityNotaryHost, .ExternalAuditor]
+  , concerns        := [.C1_CryptographicBlindness, .C5_BilateralNonRepudiation]
+  , registerIds     := ["NR-04", "NR-08", "NR-09", "NR-10", "EF-05", "OB-01", "WT-03"]
+  , backingTheorems :=
+      [ "UorNotary.NotaryCore.paeInjective"
+      , "UorNotary.NotaryCore.mismatchNeverProducesVerifiedVerdict"
+      , "UorNotary.NotaryCore.unicodeFailNeverProducesVerifiedVerdict"
+      , "UorNotary.Effects.noRawPayloadInHostEffects"
+      , "UorNotary.Observability.redactedHasOneValue"
+      , "UorNotary.Observability.redactionIgnoresText"
+      ]
+  , freeCommonsBinary := "uor-notary-reference"
+  }
+
+def offlineVerifierZeroNetworkFeature : FeatureSpec :=
+  { id              := .F4_ZeroNetworkOfflineVerifier
+  , title           := "Zero-Network 5-Step Offline DSSE, uor-addr, Merkle & .holo Verifier"
+  , stakeholders    := [.ExternalAuditor, .AgentOperator, .FoundationMaintainer]
+  , concerns        := [.C3_OfflineReplayability, .C5_BilateralNonRepudiation, .C8_NonExtractiveCommonsExit]
+  , registerIds     := ["NR-09", "NR-10", "NR-12", "WT-04"]
+  , backingTheorems :=
+      [ "UorNotary.NotaryCore.paeInjective"
+      , "UorNotary.NotaryCore.merkleInclusionVerifiesAgainstRoot"
+      , "UorNotary.NotaryCore.traceBoundedByTrMax"
+      ]
+  , freeCommonsBinary := "uor-verify-offline"
+  }
+
+def sidecarFailClosedInterceptionFeature : FeatureSpec :=
+  { id              := .F5_LocalZeroTrustSidecarProxy
+  , title           := "Local Zero-Trust Fail-Closed MCP Sidecar Proxy (.uor-pins.json)"
+  , stakeholders    := [.AgentOperator]
+  , concerns        := [.C1_CryptographicBlindness, .C2_UnicodeSmugglingPrevention, .C4_FailClosedDriftDetection, .C8_NonExtractiveCommonsExit]
+  , registerIds     := ["WT-01", "WT-02", "OV-05"]
+  , backingTheorems :=
+      [ "UorNotary.OwnerValues.timeoutModeAlwaysFailClosed"
+      , "UorNotary.NotaryCore.mismatchNeverProducesVerifiedVerdict"
+      ]
+  , freeCommonsBinary := "uor-notary proxy"
+  }
+
+abbrev sidecarOfflinePinningFeature : FeatureSpec :=
+  sidecarFailClosedInterceptionFeature
+
+abbrev referenceNotaryAdapterFeature : FeatureSpec :=
+  blindNotarizationFeature
+
+def watchtowerPublicDiffFeedFeature : FeatureSpec :=
+  { id              := .F6_PublicMcpWatchtower
+  , title           := "Public MCP Watchtower Registry Poller, Silent-Drift RSS/JSON Feed & Kappa Directory"
+  , stakeholders    := [.FoundationMaintainer, .AgentOperator, .McpToolVendor]
+  , concerns        := [.C2_UnicodeSmugglingPrevention, .C4_FailClosedDriftDetection, .C6_ReproducibleProjection, .C8_NonExtractiveCommonsExit]
+  , registerIds     := ["WT-05", "WT-06", "NR-03", "UR-01"]
+  , backingTheorems :=
+      [ "UorNotary.Surface.projectionPermutationInvariant"
+      , "UorNotary.Admission.refusalPrecedesCanonicalization"
+      , "UorNotary.Product.freeCommonsZeroLockIn"
+      ]
+  , freeCommonsBinary := "uor-watchtower-free"
+  }
+
+def specFor (f : FeatureId) : FeatureSpec :=
+  match f with
+  | .F1_Stage0UnicodeRefusalGate        => stage0UnicodeFeature
+  | .F2_DeterministicSurfacePinning     => surfacePinningFeature
+  | .F3_BlindNotarizationAndCausalChaining => blindNotarizationFeature
+  | .F4_ZeroNetworkOfflineVerifier      => offlineVerifierZeroNetworkFeature
+  | .F5_LocalZeroTrustSidecarProxy      => sidecarFailClosedInterceptionFeature
+  | .F6_PublicMcpWatchtower             => watchtowerPublicDiffFeedFeature
+
+def allFeatures : List FeatureId :=
+  [ .F1_Stage0UnicodeRefusalGate
+  , .F2_DeterministicSurfacePinning
+  , .F3_BlindNotarizationAndCausalChaining
+  , .F4_ZeroNetworkOfflineVerifier
+  , .F5_LocalZeroTrustSidecarProxy
+  , .F6_PublicMcpWatchtower
+  ]
+
+def isFeatureWellBacked (s : FeatureSpec) : Bool :=
+  (!s.stakeholders.isEmpty) &&
+  (!s.concerns.isEmpty) &&
+  (!s.registerIds.isEmpty) &&
+  (!s.backingTheorems.isEmpty) &&
+  (!s.freeCommonsBinary.isEmpty)
+
+theorem allFeaturesBackedByKernelClaims (f : FeatureId) :
+    isFeatureWellBacked (specFor f) = true := by
+  cases f <;> rfl
+
+theorem everyConcernAddressedByFeature (c : Concern) :
+    allFeatures.any (fun f => ((specFor f).concerns).contains c) = true := by
+  cases c <;> rfl
+
+end UorNotary.Features
+\end{lean}
+
+\end{document}

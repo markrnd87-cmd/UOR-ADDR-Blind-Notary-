@@ -1,0 +1,19 @@
+[package]
+name = "uor-mcp-watchtower-free"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "Free public MCP Watchtower registry scanner, silent-drift detector, and static JSON/RSS feed generator."
+repository = "https://github.com/UOR-Foundation/uor-mcp-notary"
+
+[[bin]]
+name = "uor-watchtower-free"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+sha2 = "0.10"

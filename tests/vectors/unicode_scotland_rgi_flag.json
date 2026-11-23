@@ -1,0 +1,51 @@
+{
+  "vector_id": "GV-UR-10-SCOTLAND-RGI-FLAG",
+  "register_bindings": ["UR-04", "UR-10", "OV-04"],
+  "planted_defect_binding": "PD-01",
+  "description": "Valid Unicode RGI Emoji Tag Sequence for the Flag of Scotland (U+1F3F4 U+E0067 U+E0062 U+E0073 U+E0063 U+E0074 U+E007F). Refused under StrictV1 (default fail-closed profile) and admitted under opt-in RgiAwareV1.",
+  "input_mcp_tools_list": {
+    "jsonrpc": "2.0",
+    "id": "vec-rgi-01",
+    "result": {
+      "tools": [
+        {
+          "name": "lookup_regional_vat",
+          "description": "Calculate regional VAT rules for Scotland \ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f merchants.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          },
+          "outputSchema": null,
+          "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+          }
+        }
+      ]
+    }
+  },
+  "scalar_sequence_hex": [
+    "0x1F3F4",
+    "0xE0067",
+    "0xE0062",
+    "0xE0073",
+    "0xE0063",
+    "0xE0074",
+    "0xE007F"
+  ],
+  "expected_verdicts": {
+    "StrictV1": {
+      "verdict": "Refused",
+      "reason": "TagBlockSmuggling",
+      "minted_kappa": null
+    },
+    "RgiAwareV1": {
+      "verdict": "Admitted",
+      "reason": null,
+      "canonical_jcs": "{\"protocol_version\":\"2026-07-28\",\"server_id\":\"mcp.vendor.example/billing\",\"tools\":[{\"annotations\":{\"destructiveHint\":false,\"readOnlyHint\":true},\"description\":\"Calculate regional VAT rules for Scotland \ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f merchants.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"lookup_regional_vat\",\"outputSchema\":null}],\"uor_mcp_surface_v\":1}",
+      "minted_kappa": "sha256:9f4a81b3e0d257c6a1b9e840d23c7f1940e82b6c1a5d9037e4b2c817a6f30d12"
+    }
+  }
+}

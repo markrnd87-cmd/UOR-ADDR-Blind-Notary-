@@ -1,0 +1,85 @@
+{
+  "vector_id": "GV-NR-03-PERMUTATION-AND-CAUSAL-CHAIN",
+  "register_bindings": ["NR-01", "NR-02", "NR-03", "NR-06", "NR-07"],
+  "planted_defect_binding": "PD-03",
+  "description": "Proves that two MCP tools/list responses with tools in opposite array order and differing transport metadata (jsonrpc id, pagination cursors, _meta) project to the exact same canonical JCS string and 71-byte manifest_kappa, and verifies causal kappa-chaining into invocation_kappa and outcome_kappa.",
+  "server_id": "mcp.vendor.example/billing",
+  "protocol_version": "2026-07-28",
+  "permutation_a_single_page": [
+    {
+      "jsonrpc": "2.0",
+      "id": "req-alpha-100",
+      "nextCursor": null,
+      "_meta": { "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01" },
+      "tools": [
+        {
+          "name": "create_invoice_summary",
+          "description": "Summarize unpaid invoices for a customer ID.",
+          "inputSchema": { "type": "object", "properties": {}, "required": [], "additionalProperties": false },
+          "outputSchema": null,
+          "annotations": { "readOnlyHint": true, "destructiveHint": false }
+        },
+        {
+          "name": "list_ledger_entries",
+          "description": "List immutable ledger entries for a billing period.",
+          "inputSchema": { "type": "object", "properties": {}, "required": [], "additionalProperties": false },
+          "outputSchema": null,
+          "annotations": { "readOnlyHint": true, "destructiveHint": false }
+        }
+      ]
+    }
+  ],
+  "permutation_b_two_pages_reversed": [
+    {
+      "jsonrpc": "2.0",
+      "id": "req-beta-999-page1",
+      "nextCursor": "cursor-page-2",
+      "_meta": { "region": "ap-southeast-2" },
+      "tools": [
+        {
+          "name": "list_ledger_entries",
+          "description": "List immutable ledger entries for a billing period.",
+          "inputSchema": { "additionalProperties": false, "required": [], "properties": {}, "type": "object" },
+          "outputSchema": null,
+          "annotations": { "destructiveHint": false, "readOnlyHint": true }
+        }
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "req-beta-999-page2",
+      "nextCursor": null,
+      "_meta": { "region": "ap-southeast-2" },
+      "tools": [
+        {
+          "name": "create_invoice_summary",
+          "description": "Summarize unpaid invoices for a customer ID.",
+          "inputSchema": { "additionalProperties": false, "required": [], "properties": {}, "type": "object" },
+          "outputSchema": null,
+          "annotations": { "destructiveHint": false, "readOnlyHint": true }
+        }
+      ]
+    }
+  ],
+  "expected_canonical_manifest_jcs": "{\"protocol_version\":\"2026-07-28\",\"server_id\":\"mcp.vendor.example/billing\",\"tools\":[{\"annotations\":{\"destructiveHint\":false,\"readOnlyHint\":true},\"description\":\"Summarize unpaid invoices for a customer ID.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"create_invoice_summary\",\"outputSchema\":null},{\"annotations\":{\"destructiveHint\":false,\"readOnlyHint\":true},\"description\":\"List immutable ledger entries for a billing period.\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"list_ledger_entries\",\"outputSchema\":null}],\"uor_mcp_surface_v\":1}",
+  "expected_manifest_kappa": "sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+  "causal_chain": {
+    "invocation_envelope": {
+      "uor_mcp_invocation_v": 1,
+      "manifest_kappa": "sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "tool": "create_invoice_summary",
+      "arguments": {}
+    },
+    "expected_invocation_jcs": "{\"arguments\":{},\"manifest_kappa\":\"sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b\",\"tool\":\"create_invoice_summary\",\"uor_mcp_invocation_v\":1}",
+    "expected_invocation_kappa": "sha256:d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+    "outcome_envelope": {
+      "uor_mcp_outcome_v": 1,
+      "invocation_kappa": "sha256:d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+      "isError": false,
+      "content": [],
+      "structuredContent": null
+    },
+    "expected_outcome_jcs": "{\"content\":[],\"invocation_kappa\":\"sha256:d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35\",\"isError\":false,\"structuredContent\":null,\"uor_mcp_outcome_v\":1}",
+    "expected_outcome_kappa": "sha256:4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+  }
+}

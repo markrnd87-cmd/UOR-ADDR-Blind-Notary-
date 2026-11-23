@@ -1,0 +1,94 @@
+\documentclass[12pt]{lexlean}
+\usepackage{prism.arch}
+
+\title{UorNotary.OwnerValues --- Tunable Policy Constants \& Safety Bounds}
+\author{UOR Foundation Commons Engineering}
+\lexmodule{UorNotary.OwnerValues}
+\lexlanguage{1.2}
+
+\begin{document}
+\maketitle
+
+\section{Owner-Set Tunable Parameters (\texttt{OV-01} .. \texttt{OV-06})}
+
+\begin{lean}
+namespace UorNotary.OwnerValues
+
+inductive UnicodeProfileDefault where
+  | StrictV1
+  | RgiAwareV1
+deriving DecidableEq, Repr
+
+inductive NotaryTimeoutFailMode where
+  | FailClosed
+deriving DecidableEq, Repr
+
+inductive OwnerValueStatus where
+  | Evidenced
+  | NeedsOwner
+deriving DecidableEq, Repr
+
+def maxToolsPerManifest : Nat := 256
+def maxToolsUpperBound : Nat := 1024
+def maxDescriptionBytes : Nat := 16384
+def maxDescriptionBytesUpperBound : Nat := 65536
+def maxJsonDepth : Nat := 64
+
+def defaultUnicodeProfile : UnicodeProfileDefault :=
+  UnicodeProfileDefault.StrictV1
+
+def failModeOnNotaryTimeout : NotaryTimeoutFailMode :=
+  NotaryTimeoutFailMode.FailClosed
+
+def maxTraceEvents : Nat := 1024
+abbrev TR_MAX : Nat := maxTraceEvents
+def checkpointIntervalSecs : Nat := 60
+
+structure OwnerPolicy where
+  toolsLimit             : Nat
+  descriptionBytesLimit  : Nat
+  jsonDepthLimit         : Nat
+  unicodeProfile         : UnicodeProfileDefault
+  timeoutFailMode        : NotaryTimeoutFailMode
+  traceEventsLimit       : Nat
+  checkpointInterval     : Nat
+deriving DecidableEq, Repr
+
+def defaultOwnerPolicy : OwnerPolicy :=
+  { toolsLimit            := maxToolsPerManifest
+  , descriptionBytesLimit := maxDescriptionBytes
+  , jsonDepthLimit        := maxJsonDepth
+  , unicodeProfile        := defaultUnicodeProfile
+  , timeoutFailMode       := failModeOnNotaryTimeout
+  , traceEventsLimit      := maxTraceEvents
+  , checkpointInterval    := checkpointIntervalSecs
+  }
+
+def isValidOverride (p : OwnerPolicy) : Bool :=
+  (1 ≤ p.toolsLimit) && (p.toolsLimit ≤ maxToolsUpperBound) &&
+  (256 ≤ p.descriptionBytesLimit) && (p.descriptionBytesLimit ≤ maxDescriptionBytesUpperBound) &&
+  (1 ≤ p.jsonDepthLimit) && (p.jsonDepthLimit ≤ maxJsonDepth) &&
+  (p.timeoutFailMode == NotaryTimeoutFailMode.FailClosed) &&
+  (1 ≤ p.traceEventsLimit) && (p.traceEventsLimit ≤ TR_MAX) &&
+  (10 ≤ p.checkpointInterval) && (p.checkpointInterval ≤ 3600)
+
+theorem defaultPolicyIsValid :
+    isValidOverride defaultOwnerPolicy = true := by
+  decide
+
+theorem timeoutModeAlwaysFailClosed (m : NotaryTimeoutFailMode) :
+    m = NotaryTimeoutFailMode.FailClosed := by
+  cases m
+  rfl
+
+theorem defaultsWithinHardCeilings :
+    maxToolsPerManifest ≤ maxToolsUpperBound ∧
+    maxDescriptionBytes ≤ maxDescriptionBytesUpperBound ∧
+    maxJsonDepth = 64 ∧
+    TR_MAX = 1024 := by
+  decide
+
+end UorNotary.OwnerValues
+\end{lean}
+
+\end{document}

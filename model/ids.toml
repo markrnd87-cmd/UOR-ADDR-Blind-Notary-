@@ -1,0 +1,649 @@
+# Authoritative Claim Registers for uor-mcp-notary (prism_mcp_notary)
+# Every requirement, kernel theorem, conformance test, and planted defect binds to a register ID below.
+
+[metadata]
+package = "uor-mcp-notary"
+crate_name = "prism_mcp_notary"
+prefix = "UorNotary"
+language = "1.2"
+schema_version = 1
+
+[[registers.UR]]
+id = "UR-01"
+title = "Refusal Precedes Canonicalization"
+module = "UorNotary.Admission"
+symbol = "refusalPrecedesCanonicalization"
+description = "If admitSurface returns Refused r, canonicalizeAndMint returns none and never mints a KappaLabel."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur01_refusal_blocks_minting"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-02"
+title = "Strict UTF-8 Well-Formedness Check"
+module = "UorNotary.Admission"
+symbol = "invalidUtf8RefusedFirst"
+description = "Malformed UTF-8 byte sequences are rejected with NotUtf8 prior to scalar decoding."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur02_invalid_utf8_refused"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-03"
+title = "UAX #15 NFC Normalization Pre-Condition"
+module = "UorNotary.Admission"
+symbol = "nonNfcRefusedBeforeHashing"
+description = "Decomposed NFD/NFKD/NFKC-only string leaves are refused with NotNfc rather than silently mutated."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur03_nfd_vs_nfc_refusal"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-04"
+title = "Plane-14 Tag Block Smuggling Refusal"
+module = "UorNotary.Admission"
+symbol = "strictRefusesAllTagBlock"
+description = "All scalars in U+E0000..U+E007F are unconditionally refused under StrictV1 with TagBlockSmuggling."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur04_tag_block_smuggling"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-05"
+title = "Bidirectional Override & Isolate Refusal"
+module = "UorNotary.Admission"
+symbol = "strictRefusesBidiUnconditionally"
+description = "All Bidi control scalars (U+202A..U+202E, U+2066..U+2069, U+061C, U+200E..U+200F) are refused under StrictV1."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur05_bidi_rlo_refusal"
+planted_defect = "PD-02"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-06"
+title = "Invisible Formatter & Zero-Width Refusal"
+module = "UorNotary.Admission"
+symbol = "strictRefusesInvisibleFormatters"
+description = "Zero-width spaces, joiners, soft hyphens, and word joiners (U+200B..U+200D, U+FEFF, U+00AD, U+2060..U+2064) are refused under StrictV1."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur06_invisible_formatters"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-07"
+title = "Variation Selector Steganography Refusal"
+module = "UorNotary.Admission"
+symbol = "strictRefusesVariationSelectors"
+description = "Variation selectors U+FE00..U+FE0F and Plane-14 Ideographic Variation Selectors U+E0100..U+E01EF are refused under StrictV1."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur07_variation_selector_stego"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-08"
+title = "Deterministic Precedence Order of Unicode Refusals"
+module = "UorNotary.Admission"
+symbol = "refusalOrderDeterministic"
+description = "Refusal precedence NotUtf8 < LimitExceeded < NotNfc < TagBlockSmuggling < BidiOverride < InvisibleFormatter < VariationSelectorStego < ForbiddenControl is total and chunk-invariant."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur08_precedence_order"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-09"
+title = "C0/C1 Control & Non-Character Refusal"
+module = "UorNotary.Admission"
+symbol = "forbidsControlAndNonCharacters"
+description = "C0/C1 controls (except TAB 0x09, LF 0x0A, CR 0x0D) and Unicode non-characters (U+FDD0..U+FDEF, U+xFFFE/F) are unconditionally refused under both profiles."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur09_control_and_nonchars"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-10"
+title = "RgiAwareV1 Contextual Subdivision Flag & Emoji Allowance"
+module = "UorNotary.Admission"
+symbol = "rgiAwareAdmitsValidSubdivisionFlag"
+description = "RgiAwareV1 admits valid RGI subdivision flag sequences (e.g., Scotland flag) while still refusing arbitrary Plane-14 tag smuggling and Plane-14 variation selectors."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur10_rgi_scotland_flag"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-11"
+title = "Recursive All-Leaf & Object-Key Scanning"
+module = "UorNotary.Admission"
+symbol = "allLeavesAndKeysScanned"
+description = "Stage-0 scans name, description, inputSchema, outputSchema, default, enum, annotations, and all nested JSON object keys."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur11_deep_schema_key_scan"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.UR]]
+id = "UR-12"
+title = "Pure Total Termination Without Host Effects"
+module = "UorNotary.Admission"
+symbol = "admitPureTotal"
+description = "admitSurface is total and terminating on all bounded byte arrays with zero HostEffect dependency."
+test_binding = "tests/conformance/unicode_gate.rs::test_ur12_pure_totality"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-01"
+title = "Pagination Drain & Duplicate Tool Name Refusal"
+module = "UorNotary.Surface"
+symbol = "duplicateToolNamesRefused"
+description = "Paginated tools/list responses are drained until nextCursor is absent; duplicate tool.name entries are deterministically refused."
+test_binding = "tests/conformance/surface_projection.rs::test_nr01_duplicate_tool_refused"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-02"
+title = "Transport Metadata Stripping & Whole-Surface Domain Envelope"
+module = "UorNotary.Surface"
+symbol = "transportMetadataStripped"
+description = "jsonrpc, id, nextCursor, and _meta keys are stripped before constructing the uor_mcp_surface_v: 1 envelope."
+test_binding = "tests/conformance/surface_projection.rs::test_nr02_transport_stripping"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-03"
+title = "Permutation-Invariant Canonical Tool Sorting"
+module = "UorNotary.Surface"
+symbol = "projectionPermutationInvariant"
+description = "Sorting tools[] by UTF-8 byte order of NFC-normalized tool.name makes manifest_kappa invariant under any permutation of input tools."
+test_binding = "tests/conformance/surface_projection.rs::test_nr03_permutation_invariance"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-04"
+title = "Fail-Closed Pin Drift State Machine"
+module = "UorNotary.NotaryCore"
+symbol = "mismatchNeverProducesVerifiedVerdict"
+description = "If observed manifest_kappa != pinned manifest_kappa, evaluateExecution transitions to DriftBlocked and never emits VERIFIED."
+test_binding = "tests/conformance/notary_core.rs::test_nr04_drift_blocks_execution"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-05"
+title = "Fail-Closed Unicode Tamper Verdict"
+module = "UorNotary.NotaryCore"
+symbol = "unicodeFailNeverProducesVerifiedVerdict"
+description = "If unicodeGate.passed = false, evaluateExecution unconditionally yields BLOCKED_TAMPER."
+test_binding = "tests/conformance/notary_core.rs::test_nr05_unicode_tamper_verdict"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-06"
+title = "Causal Kappa-Chaining Across Manifest, Invocation, and Outcome"
+module = "UorNotary.Surface"
+symbol = "causalChainIntegrity"
+description = "invocation_kappa cryptographically commits to manifest_kappa, and outcome_kappa commits to invocation_kappa."
+test_binding = "tests/conformance/surface_projection.rs::test_nr06_causal_kappa_chain"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-07"
+title = "71-Byte ASCII KappaLabel Invariant"
+module = "UorNotary.Surface"
+symbol = "kappaLabelExactLength"
+description = "Every minted KappaLabel is exactly 71 ASCII bytes matching ^sha256:[0-9a-f]{64}$."
+test_binding = "tests/conformance/surface_projection.rs::test_nr07_kappa_label_format"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-08"
+title = "in-toto Statement v1 & Self-Addressing Receipt Kappa"
+module = "UorNotary.NotaryCore"
+symbol = "statementSelfAddressingConsistent"
+description = "in-toto Statement v1 binds manifest, invocation, and outcome subjects and computes receipt_kappa via uor_addr::schema::codemodule_signed."
+test_binding = "tests/conformance/notary_core.rs::test_nr08_intoto_statement_address"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-09"
+title = "DSSE v1.0 Pre-Authentication Encoding (PAE) Injectivity"
+module = "UorNotary.NotaryCore"
+symbol = "paeInjective"
+description = "PAE(type, body) length-prefixed encoding is strictly injective over all (payloadType, body) byte pairs."
+test_binding = "tests/conformance/notary_core.rs::test_nr09_pae_injectivity"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-10"
+title = "C2SP tlog-checkpoint & Merkle Inclusion Proof Verification"
+module = "UorNotary.NotaryCore"
+symbol = "merkleInclusionVerifiesAgainstRoot"
+description = "Every notarized receipt leaf verifies against the signed C2SP tlog-checkpoint root hash."
+test_binding = "tests/conformance/notary_core.rs::test_nr10_merkle_inclusion"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-11"
+title = "Authenticated Pin Rotation Pre-Condition"
+module = "UorNotary.NotaryCore"
+symbol = "rotatePinRequiresPreviousKappaAndApprover"
+description = "rotatePin succeeds only when previous_pin_kappa matches the currently active pin and a non-empty approver_ref is supplied."
+test_binding = "tests/conformance/notary_core.rs::test_nr11_pin_rotation_guard"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.NR]]
+id = "NR-12"
+title = "Bounded Hologram Replay Trace Export (.holo)"
+module = "UorNotary.NotaryCore"
+symbol = "traceBoundedByTrMax"
+description = "Emitted replay trace never exceeds TR_MAX (1024) events and satisfies prism_verify::certify_from_trace invariants."
+test_binding = "tests/conformance/notary_core.rs::test_nr12_holo_trace_replay"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-01"
+title = "E1 ReadActivePin & E2 RotatePin Effect Typing"
+module = "UorNotary.Effects"
+symbol = "pinEffectsCarryOnlyIdentifiersAndKappas"
+description = "ReadActivePin and RotatePin carry only ServerId, KappaLabel, and ApproverRef."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef01_pin_effects"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-02"
+title = "E3 SignPae Digest-Only Boundary"
+module = "UorNotary.Effects"
+symbol = "signPaeCarriesOnlyDigest"
+description = "SignPae crosses the host boundary with a KeyId and a 32-byte PAE digest (Bytes32) only."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef02_sign_pae_digest"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-03"
+title = "E4 AppendTransparencyLog & E7 ReadCheckpoint Typing"
+module = "UorNotary.Effects"
+symbol = "transparencyEffectsCarryOnlyKappas"
+description = "AppendTransparencyLog accepts only a 71-byte KappaLabel leaf."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef03_tlog_effects"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-04"
+title = "E5 ReadUtcClock & E6 EmitDriftWebhook Blind Event Typing"
+module = "UorNotary.Effects"
+symbol = "driftWebhookCarriesOnlyBlindMetadata"
+description = "EmitDriftWebhook carries only ServerId, expected/observed KappaLabels, and closed ReasonCode."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef04_blind_webhook"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-05"
+title = "Zero Raw Payload Egress Across HostEffect Algebra"
+module = "UorNotary.Effects"
+symbol = "noRawPayloadInHostEffects"
+description = "No constructor of HostEffect (E1-E7) contains RawJson, ToolDescription, ToolArguments, or ToolOutcome."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef05_no_raw_payload_in_effects"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-06"
+title = "Closed 7-Constructor Effect Enumeration"
+module = "UorNotary.Effects"
+symbol = "hostEffectTagBoundedToSeven"
+description = "HostEffect is closed over exactly 7 constructors (E1..E7) with no arbitrary IO escape hatch."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef06_closed_seven_effects"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-07"
+title = "UorMcp.Extension.Provider Single Root Composition"
+module = "UorNotary.Provider"
+symbol = "notaryRunComposesUorMcp"
+description = "notaryRun links UorMcp.Extension.Provider unchanged and executes within EffectProgram."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef07_provider_root"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.EF]]
+id = "EF-08"
+title = "Wire Request 2 KB Size Ceiling & Unknown-Field Rejection"
+module = "UorNotary.Effects"
+symbol = "notarizeRequestStrictlyBounded"
+description = "Notary requests exceeding 2048 bytes or carrying unschema'd payload fields are rejected with 400 INVALID_KAPPA_FORMAT."
+test_binding = "tests/conformance/effects_blindness.rs::test_ef08_wire_size_ceiling"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-01"
+title = "Unit-Isomorphic Redacted Type (Redacted := Withheld)"
+module = "UorNotary.Observability"
+symbol = "redactedHasOneValue"
+description = "Redacted has a single constructor Withheld; for all a b : Redacted, a = b."
+test_binding = "tests/conformance/observability.rs::test_ob01_redacted_unit"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-02"
+title = "Zero-Length-Leak Redaction Function"
+module = "UorNotary.Observability"
+symbol = "redactionIgnoresText"
+description = "For all strings s1 s2, redact s1 = redact s2, preventing even byte-length leakage in telemetry."
+test_binding = "tests/conformance/observability.rs::test_ob02_redaction_ignores_length"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-03"
+title = "Exclusion of notifications/message from Emitted Set"
+module = "UorNotary.Observability"
+symbol = "neverEmitsServerMessage"
+description = "The closed Emitted MCP notification set excludes notifications/message so raw error prose cannot leak."
+test_binding = "tests/conformance/observability.rs::test_ob03_no_server_message_notification"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-04"
+title = "Telemetry Record Payload Blindness"
+module = "UorNotary.Observability"
+symbol = "telemetryRecordIsBlind"
+description = "All structured log and metric records carry Redacted or KappaLabel fields exclusively."
+test_binding = "tests/conformance/observability.rs::test_ob04_telemetry_blindness"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-05"
+title = "Alerting on ErrorClass 2, 3, 70, E3, and E6 Only"
+module = "UorNotary.Observability"
+symbol = "alertMatrixMatchesPolicy"
+description = "Paging alerts fire strictly on ErrorClass 2 (Config), 3 (Env), 70 (Internal), E3 sign failure, and E6 manifest drift."
+test_binding = "tests/conformance/observability.rs::test_ob05_alert_matrix"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-06"
+title = "No Paging Alert on 400 Client Syntax Errors"
+module = "UorNotary.Observability"
+symbol = "clientSyntaxErrorNeverPages"
+description = "Malformed client requests (HTTP 400 / ErrorClass 1) increment counters without triggering operator pages."
+test_binding = "tests/conformance/observability.rs::test_ob06_no_page_on_400"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-07"
+title = "SLI Latency & Verdict Counter Completeness"
+module = "UorNotary.Observability"
+symbol = "sliCountersTotalOverVerdicts"
+description = "Every notary evaluation increments exactly one verdict counter (VERIFIED, BLOCKED_DRIFT, BLOCKED_TAMPER)."
+test_binding = "tests/conformance/observability.rs::test_ob07_sli_counter_totality"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-08"
+title = "Offending Codepoint Class Reporting Without Raw Scalar Leakage"
+module = "UorNotary.Observability"
+symbol = "driftReportExposesClassOnly"
+description = "Unicode refusal telemetry logs only the closed UnicodeRefusal enum class, never the surrounding prompt or tool prose."
+test_binding = "tests/conformance/observability.rs::test_ob08_refusal_class_only"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-09"
+title = "Deterministic Trace Event Ordering in Telemetry"
+module = "UorNotary.Observability"
+symbol = "traceTelemetryMonotonic"
+description = "Trace buffer indices increase monotonically and halt cleanly at TR_MAX."
+test_binding = "tests/conformance/observability.rs::test_ob09_trace_monotonic"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.OB]]
+id = "OB-10"
+title = "Checkpoint Staleness SLI Guard"
+module = "UorNotary.Observability"
+symbol = "checkpointStalenessAlert"
+description = "Triggers an Environment alert (ErrorClass 3) if C2SP checkpoint age exceeds 2 * checkpointIntervalSecs."
+test_binding = "tests/conformance/observability.rs::test_ob10_checkpoint_staleness"
+planted_defect = "PD-05"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-01"
+title = "R1: Silent Tool-Description Rug-Pull Mitigation"
+module = "UorNotary.Security"
+symbol = "threatR1MitigatedByPinDriftGate"
+description = "Mitigates silent post-approval tools/list mutations via NR-04 and UR-01."
+test_binding = "tests/conformance/security.rs::test_sm01_r1_rug_pull_blocked"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-02"
+title = "R2: Invisible Unicode Tag-Block & Bidi Smuggling Mitigation"
+module = "UorNotary.Security"
+symbol = "threatR2MitigatedByStage0Gate"
+description = "Mitigates invisible ASCII smuggling and Bidi spoofing via UR-04 and UR-05."
+test_binding = "tests/conformance/security.rs::test_sm02_r2_unicode_smuggling_blocked"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-03"
+title = "R3: ShareLock Multi-Tool Split-Payload Injection Mitigation"
+module = "UorNotary.Security"
+symbol = "threatR3MitigatedByWholeSurfaceKappa"
+description = "Mitigates cross-tool split-payload drift by hashing the entire sorted tools[] array into a single manifest_kappa (NR-02)."
+test_binding = "tests/conformance/security.rs::test_sm03_r3_sharelock_whole_surface"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-04"
+title = "R4: Notary Signing-Key Compromise (Operational Runbook)"
+module = "UorNotary.Security"
+symbol = "threatR4PendingOperationalKeyRotation"
+description = "Classified as Pending: depends on host operator key rotation and /.well-known/uor-notary.json key revocation."
+test_binding = "tests/conformance/security.rs::test_sm04_r4_pending_status_verified"
+planted_defect = "PD-06"
+status = "Pending"
+
+[[registers.SM]]
+id = "SM-05"
+title = "R5: Notary Split-View / Backdating Attack Mitigation"
+module = "UorNotary.Security"
+symbol = "threatR5MitigatedByMerkleCheckpoint"
+description = "Mitigates notary equivocation via append-only Merkle tree inclusion proofs and signed C2SP tlog-checkpoints (NR-10)."
+test_binding = "tests/conformance/security.rs::test_sm05_r5_merkle_split_view_detected"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-06"
+title = "R6: Raw Customer Payload Exfiltration via Notary Logs/Telemetry"
+module = "UorNotary.Security"
+symbol = "threatR6MitigatedByTypeBlindness"
+description = "Mitigates notary-side data leakage by statically excluding raw payloads from HostEffect (EF-05) and Observability (OB-04)."
+test_binding = "tests/conformance/security.rs::test_sm06_r6_zero_payload_exfiltration"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-07"
+title = "R7: Cross-Call Outcome Replay & Swapping Mitigation"
+module = "UorNotary.Security"
+symbol = "threatR7MitigatedByCausalChaining"
+description = "Mitigates splicing an old tool outcome onto a new invocation via causal kappa-chaining (NR-06)."
+test_binding = "tests/conformance/security.rs::test_sm07_r7_causal_chain_replay_blocked"
+planted_defect = "PD-06"
+status = "Executed"
+
+[[registers.SM]]
+id = "SM-08"
+title = "R8: Semantic Prompt Injection via Ordinary Visible Prose"
+module = "UorNotary.Security"
+symbol = "threatR8ClassifiedResidualNonScope"
+description = "Classified as Residual: semantic evaluation of visible natural-language prose is explicitly out-of-scope of cryptographic surface notarization."
+test_binding = "tests/conformance/security.rs::test_sm08_r8_residual_boundary"
+planted_defect = "PD-06"
+status = "Residual"
+
+[[registers.OV]]
+id = "OV-01"
+title = "maxToolsPerManifest Default & Ceiling (256 / 1024)"
+module = "UorNotary.OwnerValues"
+symbol = "maxToolsPerManifest"
+description = "Bounds tools[] count per manifest to 256 by default (overridable up to 1024)."
+test_binding = "tests/conformance/owner_values.rs::test_ov01_max_tools_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.OV]]
+id = "OV-02"
+title = "maxDescriptionBytes Default (16384)"
+module = "UorNotary.OwnerValues"
+symbol = "maxDescriptionBytes"
+description = "Bounds UTF-8 byte length per tool description to 16384 bytes."
+test_binding = "tests/conformance/owner_values.rs::test_ov02_max_description_bytes_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.OV]]
+id = "OV-03"
+title = "maxJsonDepth Default (64, ADR-057)"
+module = "UorNotary.OwnerValues"
+symbol = "maxJsonDepth"
+description = "Aligns JSON recursion guard with uor-addr ADR-057 depth limit of 64."
+test_binding = "tests/conformance/owner_values.rs::test_ov03_max_json_depth_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.OV]]
+id = "OV-04"
+title = "defaultUnicodeProfile Default (StrictV1)"
+module = "UorNotary.OwnerValues"
+symbol = "defaultUnicodeProfile"
+description = "Sets fail-closed StrictV1 as the default Stage-0 Unicode profile."
+test_binding = "tests/conformance/owner_values.rs::test_ov04_default_unicode_profile_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.OV]]
+id = "OV-05"
+title = "failModeOnNotaryTimeout Default (FailClosed)"
+module = "UorNotary.OwnerValues"
+symbol = "failModeOnNotaryTimeout"
+description = "Requires local sidecar to halt tool execution when a configured remote notary times out."
+test_binding = "tests/conformance/owner_values.rs::test_ov05_fail_mode_timeout_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.OV]]
+id = "OV-06"
+title = "maxTraceEvents (TR_MAX = 1024) & checkpointIntervalSecs (60)"
+module = "UorNotary.OwnerValues"
+symbol = "maxTraceEvents"
+description = "Bounds hologram replay trace buffer to 1024 events and reference checkpoint publication interval to 60s."
+test_binding = "tests/conformance/owner_values.rs::test_ov06_trace_and_checkpoint_sync"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-01"
+title = "Local Sidecar Offline Lockfile Pinning (.uor-pins.json)"
+module = "UorNotary.Features"
+symbol = "sidecarOfflinePinningFeature"
+description = "host/sidecar-cli pins and enforces manifest_kappa locally without requiring a remote server."
+test_binding = "tests/conformance/ecosystem.rs::test_wt01_sidecar_local_lockfile"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-02"
+title = "Local Sidecar Fail-Closed Proxy Interception"
+module = "UorNotary.Features"
+symbol = "sidecarFailClosedInterceptionFeature"
+description = "host/sidecar-cli blocks tools/call before LLM or server execution when Stage-0 or pin verification fails."
+test_binding = "tests/conformance/ecosystem.rs::test_wt02_sidecar_fail_closed_proxy"
+planted_defect = "PD-01"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-03"
+title = "Self-Hostable Reference Blind Notary (/v1/* Endpoints)"
+module = "UorNotary.Features"
+symbol = "referenceNotaryAdapterFeature"
+description = "host/notary-reference implements E1-E7, /v1/* wire semantics, and 400/404/409/422/429 error codes."
+test_binding = "tests/conformance/ecosystem.rs::test_wt03_reference_notary_endpoints"
+planted_defect = "PD-04"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-04"
+title = "Zero-Network 5-Step Offline Receipt & .holo Verifier"
+module = "UorNotary.Features"
+symbol = "offlineVerifierZeroNetworkFeature"
+description = "host/verifier-offline validates DSSE PAE, in-toto v1, uor-addr kappas, Merkle proofs, and Notary.holo with zero network access."
+test_binding = "host/verifier-offline/test/verify_golden.mjs"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-05"
+title = "Public MCP Watchtower Reproducible Surface Diffing"
+module = "UorNotary.Features"
+symbol = "watchtowerPublicDiffFeedFeature"
+description = "host/watchtower-free polls public MCP registries using core-wasm and emits deterministic kappa-label diffs."
+test_binding = "tests/conformance/ecosystem.rs::test_wt05_watchtower_diff_feed"
+planted_defect = "PD-03"
+status = "Executed"
+
+[[registers.WT]]
+id = "WT-06"
+title = "100% Free Open-Commons License & Exit Guarantee"
+module = "UorNotary.Product"
+symbol = "freeCommonsZeroLockIn"
+description = "All specifications, sidecars, verifiers, and watchtower components operate under MIT OR Apache-2.0 with zero proprietary lock-in."
+test_binding = "tests/conformance/ecosystem.rs::test_wt06_free_commons_exit"
+planted_defect = "PD-07"
+status = "Executed"
+
+[[registers.ARCH]]
+id = "ARCH-01"
+title = "ISO/IEC/IEEE 42010 Complete Concern Framing (PP2014-PP2018)"
+module = "UorNotary.Foundation.Arch"
+symbol = "everyConcernIsFramedByViewpoint"
+description = "All 5 stakeholders and 8 concerns (C1-C8) are framed by at least one architecture viewpoint."
+test_binding = "tests/conformance/planted_defects.rs::test_pd07_unframed_concern"
+planted_defect = "PD-07"
+status = "Executed"
+
+[[registers.AU]]
+id = "AU-13"
+title = "LexLean Language 1.2 Data-Block Refusal (LLP2003)"
+module = "UorNotary.NotaryCore"
+symbol = "language12StrictCompliance"
+description = "No module emits legacy \\semanticdata, \\toolingdata, or \\coredata blocks."
+test_binding = "tests/conformance/planted_defects.rs::test_pd08_legacy_data_block_refused"
+planted_defect = "PD-08"
+status = "Executed"
